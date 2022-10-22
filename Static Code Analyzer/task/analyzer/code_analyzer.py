@@ -1,4 +1,5 @@
-# write your code here
+import os
+import sys
 
 class CodeAnalyzer:
     errors_dict = {
@@ -66,22 +67,33 @@ class CodeAnalyzer:
             errors.append('S005')
         return errors
 
-    def check_lines(self, f):
-        empty_counter = 0
-        for (i, line) in enumerate(f, start=1):
-            errors = analyzer.check_line(line)
-            if empty_counter > 2:
-                errors.append('S006')
-            for e in errors:
-                print(f'Line {i}: {e} {analyzer.errors_dict[e]}')
-            if not line.strip():
-                empty_counter += 1
-            else:
-                empty_counter = 0
+    def check_file(self, path):
+        with open(path) as f:
+            empty_counter = 0
+            for (i, line) in enumerate(f, start=1):
+                errors = analyzer.check_line(line)
+                if empty_counter > 2:
+                    errors.append('S006')
+                for e in errors:
+                    print(f'{path}: Line {i}: {e} {analyzer.errors_dict[e]}')
+                if not line.strip():
+                    empty_counter += 1
+                else:
+                    empty_counter = 0
+
+    def check_all_files(self, path):
+        if os.path.isfile(path) and path.endswith('.py'):
+            self.check_file(path)
+        elif os.path.isdir(path):
+            for p in sorted(os.listdir(path)):
+                if p.endswith('.py'):
+                    self.check_file(os.path.join(path, p))
 
 
-analyzer = CodeAnalyzer()
-file_path = input()
-with open(file_path) as f:
-    analyzer.check_lines(f)
+if __name__ == '__main__':
+    path = sys.argv[1]
+    analyzer = CodeAnalyzer()
+    analyzer.check_all_files(path)
+
+
 
