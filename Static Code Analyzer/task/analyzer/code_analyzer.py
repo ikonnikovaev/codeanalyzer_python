@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 class CodeAnalyzer:
@@ -8,7 +9,10 @@ class CodeAnalyzer:
         'S003': 'Unnecessary semicolon after a statement',
         'S004': 'Less than two spaces before inline comments',
         'S005': 'TODO found',
-        'S006': 'More than two blank lines preceding a code line'
+        'S006': 'More than two blank lines preceding a code line',
+        'S007': 'Too many spaces after construction_name (def or class)',
+        'S008': 'Class name class_name should be written in CamelCase',
+        'S009': 'Function name function_name should be written in snake_case'
     }
 
     def split_line(self, line):
@@ -52,6 +56,30 @@ class CodeAnalyzer:
             return comment.lower().find('todo') == -1
         return True
 
+    def check_spaces(self, line):
+        statement, comment = self.split_line(line)
+        return not re.match('(def|class)\s{2,}', statement.lstrip())
+
+    def check_class_name(self, line):
+        statement, comment = self.split_line(line)
+        match = re.match('class\s+(\w+)', statement.lstrip())
+        if not match:
+            return True
+        else:
+            class_name = match.group(1)
+            return re.match('([A-Z][a-z]*)+', class_name)
+
+    def check_function_name(self, line):
+        statement, comment = self.split_line(line)
+        match = re.match('def\s+(\w+)', statement.lstrip())
+        if not match:
+            return True
+        else:
+            function_name = match.group(1)
+            return re.match('[a-z_]+', function_name)
+
+
+
 
     def check_line(self, line):
         errors = []
@@ -65,6 +93,12 @@ class CodeAnalyzer:
             errors.append('S004')
         if not self.check_todos(line):
             errors.append('S005')
+        if not self.check_spaces(line):
+            errors.append('S007')
+        if not self.check_class_name(line):
+            errors.append('S008')
+        if not self.check_function_name(line):
+            errors.append('S009')
         return errors
 
     def check_file(self, path):
@@ -74,6 +108,7 @@ class CodeAnalyzer:
                 errors = analyzer.check_line(line)
                 if empty_counter > 2:
                     errors.append('S006')
+                errors.sort()
                 for e in errors:
                     print(f'{path}: Line {i}: {e} {analyzer.errors_dict[e]}')
                 if not line.strip():
